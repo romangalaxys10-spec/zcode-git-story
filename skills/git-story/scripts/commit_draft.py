@@ -89,7 +89,11 @@ def scope_from(files):
     if not tops:
         return ""
     top, n = max(tops.items(), key=lambda kv: kv[1])
-    return top if n >= 1 and len(tops) == 1 else (top if n * 2 > len(files) else "mixed")
+    if len(tops) == 1:
+        return top
+    if n * 2 > len(files):
+        return top
+    return ""
 
 
 HINTS = {
@@ -119,9 +123,13 @@ def classify(files):
     only_docs = all(any(n in p for n in HINTS["docs"]) for p in low_paths)
     if only_docs:
         return "docs", "only documentation files touched"
-    if set(hints) <= {"test"}:
+    test_files = [f for f in files
+                  if any(n in f["path"].lower() for n in HINTS["test"])]
+    if len(test_files) == total:
         return "test", "only test files touched"
-    if set(hints) <= {"ci"}:
+    ci_files = [f for f in files
+                if any(n in f["path"].lower() for n in HINTS["ci"])]
+    if len(ci_files) == total:
         return "ci", "only CI files touched"
     if added_n == total:
         return "feat", "every file is new"
@@ -221,15 +229,20 @@ def draft_pr(repo, base):
 def draft_digest(repo, days):
     p = git(repo, "log", "--since=%d days ago" % days, "--no-merges",
             "--pretty=format:%h\t%s")
-    lines = [l for l in p.stdout.splitlines() if "\t" in l]
-    if not lines:
+    entries = []
+    for line in p.stdout.splitlines():
+        if "\t" not in line:
+            continue
+        sha, subject = line.split("\t", 1)
+        entries.append((sha, subject))
+    if not entries:
         fail(1, "no commits in the last %d days." % days)
-    print("# Weekly digest draft (%d commits)" % len(lines))
+    print("# Weekly digest draft (%d commits)" % len(entries))
     print()
     print("Re-group these by what the work was actually about. One paragraph")
     print("per theme. Name the outcome and the commit that carries it.")
     print()
-    for sha, subject in lines:
+    for sha, subject in entries:
         print("  %s  %s" % (sha, subject))
     print()
     print("Rules: no 'shipped' more than once; every sentence traces to a")
