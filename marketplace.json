@@ -1,0 +1,13 @@
+{
+  "name": "git-story-marketplace",
+  "plugins": [
+    {
+      "name": "git-story",
+      "source": "./",
+      "version": "0.1.0",
+      "description": "Auto-commit narratives: drafts conventional commit messages from the staged diff (not the file list), writes pull request descriptions structured as what/why/how-tested, and produces a weekly 'what I built' digest from git log in plain human voice. Never invents intent the diff does not support.",
+      "displayName": "Git Story",
+      "category": "developer-tools"
+    }
+  ]
+}
